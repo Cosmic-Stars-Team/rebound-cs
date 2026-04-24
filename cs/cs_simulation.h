@@ -177,12 +177,22 @@ void cs_enable_gr(cs_simulation_t* cs, cs_gr_mode_t mode, double c);
  */
 void cs_disable_gr(cs_simulation_t* cs);
 
-/* More enable functions will be declared here as modules are implemented:
- *   void cs_enable_radiation(cs_simulation_t* cs, double c);
+/**
+ * 开启辐射压与 Poynting-Robertson 拖曳力
+ * @param cs  cs_simulation 句柄
+ * @param c   光速（仿真单位），可用 CS_C_AU_YR_MSUN 等常量
+ */
+void cs_enable_radiation(cs_simulation_t* cs, double c);
+
+/**
+ * 关闭辐射压模块
+ */
+void cs_disable_radiation(cs_simulation_t* cs);
+
+/* 更多模块待实现：
  *   void cs_enable_tides_ctl(cs_simulation_t* cs);
  *   void cs_enable_harmonics(cs_simulation_t* cs);
  *   void cs_enable_migration_forces(cs_simulation_t* cs);
- *   ...
  */
 
 /* -------------------------------------------------------------------------
@@ -208,6 +218,12 @@ void cs_particle_params_set(struct reb_particle* p, cs_particle_params_t* params
  * Returns NULL if no params have been attached.
  */
 cs_particle_params_t* cs_particle_params_get(const struct reb_particle* p);
+
+/**
+ * Enable solar mass units.
+ */
+void cs_enable_solarmass(cs_simulation_t* cs);
+
 
 #ifdef __cplusplus
 }

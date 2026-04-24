@@ -8,6 +8,7 @@
  * Implemented in their respective cs_*.c files.
  * ------------------------------------------------------------------------- */
 void cs_gr_additional_forces(struct reb_simulation* sim);
+void cs_radiation_additional_forces(struct reb_simulation* sim);
 
 /* -------------------------------------------------------------------------
  * Internal dispatch callbacks
@@ -24,9 +25,17 @@ static void cs_dispatch_additional_forces(struct reb_simulation* sim) {
         cs_gr_additional_forces(sim);
     }
 
+    /* --- 辐射压 + PR 拖曳 --- */
+    if (cs->modules & CS_MODULE_RADIATION) {
+        cs_radiation_additional_forces(sim);
+    }
+
     /* Chain into user's own additional_forces if they set one before cs_simulation_create */
     if (cs->user_additional_forces) {
         cs->user_additional_forces(sim);
+    }
+    if (cs->modules & CS_MODULE_SOLAR_MASS) {
+        cs_solarmass(sim);
     }
 }
 
@@ -165,6 +174,28 @@ void cs_enable_gr(cs_simulation_t* cs, cs_gr_mode_t mode, double c) {
      */
     if (mode == CS_GR_SINGLE || mode == CS_GR_FULL) {
         cs->sim->force_is_velocity_dependent = 1;
+    }
+}
+
+void cs_enable_radiation(cs_simulation_t* cs, double c) {
+    if (!cs) return;
+    cs->modules |= CS_MODULE_RADIATION;
+    cs->rad_c    = c;
+    /* 辐射力是速度相关力，辛积分器需要此标志 */
+    cs->sim->force_is_velocity_dependent = 1;
+}
+
+void cs_disable_radiation(cs_simulation_t* cs) {
+    if (!cs) return;
+    cs->modules &= ~CS_MODULE_RADIATION;
+
+    /* 检查是否还有其他速度相关模块，没有则清除标志 */
+    const cs_modules_t vel_dep_mask =
+        CS_MODULE_GR | CS_MODULE_GR_FULL |
+        CS_MODULE_RADIATION | CS_MODULE_MIGRATE_FORCES |
+        CS_MODULE_TIDES_CTL | CS_MODULE_TIDES_DYN | CS_MODULE_TIDES_SPIN;
+    if (!(cs->modules & vel_dep_mask)) {
+        cs->sim->force_is_velocity_dependent = 0;
     }
 }
 
