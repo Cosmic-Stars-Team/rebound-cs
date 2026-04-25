@@ -9,7 +9,7 @@
  *
  * Based on Burns, Lamy & Soter (1979), Icarus 40, 1.
  * Ported from REBOUNDx radiation_forces.c by Dan Tamayo & Hanno Rein.
- * Adapted for Cosmic Stars by Xiyu Chen (removed reboundx framework dependency).
+ * Adapted for Cosmic Stars by Xiyu Chen.
  *
  * 速度相关力 — 使用前必须设置：
  *   sim->force_is_velocity_dependent = 1;

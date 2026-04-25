@@ -15,7 +15,6 @@ rebound-cs/
 │   ├── cs_simulation.h/c   框架核心：模块注册、回调调度、生命周期管理
 │   ├── cs_gr.h/c           广义相对论后牛顿修正（三种精度模式）
 │   └── ...                 （更多模块持续添加中）
-├── reboundx/       REBOUNDx 原始 C 源码（仅作参考，不参与编译）
 └── examples/       REBOUND C 示例
 ```
 
@@ -98,7 +97,6 @@ https://github.com/dtamayo/reboundx
 
 REBOUNDx 以极小的侵入性为 REBOUND 提供了丰富的物理扩展模块，
 其设计理念（通过回调和 void* 实现零耦合扩展）直接启发了本项目 `cs/` 层的架构。
-`reboundx/` 目录保留了其原始 C 源码作为参考。
 
 核心论文：
 - Tamayo, Rein, Shi & Hernandez 2020, MNRAS 491, 2885
