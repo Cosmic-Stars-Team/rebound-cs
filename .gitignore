@@ -34,7 +34,6 @@ rebound_cs.egg-info/
 venv/
 dist/
 build/
-rebound_cs/build_*/
 .claude/
 rebound/examples/
 src/rebound

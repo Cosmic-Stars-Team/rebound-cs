@@ -45,8 +45,7 @@ def _find_cs_lib():
             return path
     raise ImportError(
         "Cannot find CS shared library (_cs.dll / _cs.so).\n"
-        "  Build it with:  pycs\\build.bat   (Windows)\n"
-        "                  make -C pycs        (Unix)"
+        "  Build it with:  make pycs   (top-level Makefile)"
     )
 
 _clib = ctypes.cdll.LoadLibrary(_find_cs_lib())
