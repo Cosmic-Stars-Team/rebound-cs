@@ -188,7 +188,7 @@ void cs_enable_gr(cs_simulation_t* cs, cs_gr_mode_t mode, double c) {
      * symplectic integrators.
      */
     if (mode == CS_GR_SINGLE || mode == CS_GR_FULL) {
-        cs->sim->force_is_velocity_dependent = 1;
+        if (cs->sim) cs->sim->force_is_velocity_dependent = 1;
     }
 }
 
@@ -197,7 +197,7 @@ void cs_enable_radiation(cs_simulation_t* cs, double c) {
     cs->modules |= CS_MODULE_RADIATION;
     cs->rad_c    = c;
     /* 辐射力是速度相关力，辛积分器需要此标志 */
-    cs->sim->force_is_velocity_dependent = 1;
+    if (cs->sim) cs->sim->force_is_velocity_dependent = 1;
 }
 
 void cs_disable_radiation(cs_simulation_t* cs) {
@@ -210,7 +210,7 @@ void cs_disable_radiation(cs_simulation_t* cs) {
         CS_MODULE_RADIATION | CS_MODULE_MIGRATE_FORCES |
         CS_MODULE_TIDES_CTL | CS_MODULE_TIDES_DYN | CS_MODULE_TIDES_SPIN;
     if (!(cs->modules & vel_dep_mask)) {
-        cs->sim->force_is_velocity_dependent = 0;
+        if (cs->sim) cs->sim->force_is_velocity_dependent = 0;
     }
 }
 
@@ -224,7 +224,7 @@ void cs_disable_gr(cs_simulation_t* cs) {
         CS_MODULE_TIDES_CTL | CS_MODULE_TIDES_DYN | CS_MODULE_TIDES_SPIN;
 
     if (!(cs->modules & vel_dep_mask)) {
-        cs->sim->force_is_velocity_dependent = 0;
+        if (cs->sim) cs->sim->force_is_velocity_dependent = 0;
     }
 }
 
@@ -241,7 +241,7 @@ void cs_enable_harmonics(cs_simulation_t* cs) {
 void cs_enable_tides(cs_simulation_t* cs) {
     if (!cs) return;
     cs->modules |= CS_MODULE_TIDES_CTL;
-    cs->sim->force_is_velocity_dependent = 1;
+    if (cs->sim) cs->sim->force_is_velocity_dependent = 1;
 }
 
 /* -------------------------------------------------------------------------
@@ -265,4 +265,75 @@ void cs_particle_params_set(struct reb_particle* p, cs_particle_params_t* params
 cs_particle_params_t* cs_particle_params_get(const struct reb_particle* p) {
     if (!p) return NULL;
     return (cs_particle_params_t*)p->ap;
+}
+
+/* -------------------------------------------------------------------------
+ * Python / FFI helpers — bypass sim->extras
+ * When cs and the host REBOUND are compiled in different DLLs, the
+ * offset of sim->extras may differ (48-byte struct divergence from #899).
+ * These alternatives take an explicit cs pointer instead of reading extras.
+ * ------------------------------------------------------------------------- */
+
+cs_simulation_t* cs_ffi_create(void) {
+    return (cs_simulation_t*)calloc(1, sizeof(cs_simulation_t));
+}
+
+void cs_ffi_free(cs_simulation_t* cs) {
+    if (!cs) return;
+    cs->sim = NULL;  /* we never set sim via this path */
+    free(cs);
+}
+
+void cs_ffi_dispatch_af(struct reb_simulation* sim, cs_simulation_t* cs) {
+    if (!cs) return;
+    if (cs->modules & (CS_MODULE_GR_POTENTIAL | CS_MODULE_GR | CS_MODULE_GR_FULL))
+        cs_gr_additional_forces(sim);
+    if (cs->modules & CS_MODULE_RADIATION)
+        cs_radiation_additional_forces(sim);
+    if (cs->modules & CS_MODULE_HARMONICS)
+        cs_harmonics_additional_forces(sim);
+    if (cs->modules & CS_MODULE_TIDES_CTL)
+        cs_tides_additional_forces(sim);
+    if (cs->user_additional_forces)
+        cs->user_additional_forces(sim);
+}
+
+void cs_ffi_dispatch_post_timestep(struct reb_simulation* sim, cs_simulation_t* cs) {
+    if (!cs) return;
+    if (cs->modules & CS_MODULE_SOLAR_MASS)
+        cs_solarmass(sim);
+}
+
+/* Debug helper: print struct layout */
+DLLEXPORT void cs_debug_layout(struct reb_simulation* s) {
+    if (!s) { printf("[cs] layout: s is NULL\n"); return; }
+    printf("[cs] sizeof=%zu N=%zu particles=%zu\n",
+        sizeof(*s),
+        (size_t)&s->N - (size_t)s,
+        (size_t)&s->particles - (size_t)s);
+    printf("[cs] additional_forces=%zu post_timestep=%zu heartbeat=%zu\n",
+        (size_t)&s->additional_forces - (size_t)s,
+        (size_t)&s->post_timestep_modifications - (size_t)s,
+        (size_t)&s->heartbeat - (size_t)s);
+    printf("[cs] free_particle_ap=%zu extras=%zu\n",
+        (size_t)&s->free_particle_ap - (size_t)s,
+        (size_t)&s->extras - (size_t)s);
+    printf("[cs] G=%zu t=%zu dt=%zu softening=%zu\n",
+        (size_t)&s->G - (size_t)s,
+        (size_t)&s->t - (size_t)s,
+        (size_t)&s->dt - (size_t)s,
+        (size_t)&s->softening - (size_t)s);
+    printf("[cs] force_is_velocity_dependent=%zu\n",
+        (size_t)&s->force_is_velocity_dependent - (size_t)s);
+}
+
+/* Non-variadic wrapper for Python ctypes */
+DLLEXPORT void cs_add_particle(struct reb_simulation* sim,
+    double m, double x, double y, double z,
+    double vx, double vy, double vz) {
+    struct reb_particle pt = {0};
+    pt.m  = m;
+    pt.x  = x;  pt.y  = y;  pt.z  = z;
+    pt.vx = vx; pt.vy = vy; pt.vz = vz;
+    reb_simulation_add(sim, pt);
 }

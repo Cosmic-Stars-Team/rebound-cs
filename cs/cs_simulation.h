@@ -152,13 +152,13 @@ typedef struct cs_simulation {
  * This sets sim->extras and registers the dispatch callbacks.
  * Call this once, right after reb_simulation_create().
  */
-cs_simulation_t* cs_simulation_create(struct reb_simulation* sim);
+DLLEXPORT cs_simulation_t* cs_simulation_create(struct reb_simulation* sim);
 
 /**
  * Free all cs resources and unregister callbacks.
  * Does NOT free the reb_simulation itself.
  */
-void cs_simulation_free(cs_simulation_t* cs);
+DLLEXPORT void cs_simulation_free(cs_simulation_t* cs);
 
 /* -------------------------------------------------------------------------
  * Module enable API
@@ -172,34 +172,34 @@ void cs_simulation_free(cs_simulation_t* cs);
  * @param mode  CS_GR_POTENTIAL / CS_GR_SINGLE / CS_GR_FULL
  * @param c     speed of light in the units used by the simulation
  */
-void cs_enable_gr(cs_simulation_t* cs, cs_gr_mode_t mode, double c);
+DLLEXPORT void cs_enable_gr(cs_simulation_t* cs, cs_gr_mode_t mode, double c);
 
 /**
  * Disable GR correction.
  */
-void cs_disable_gr(cs_simulation_t* cs);
+DLLEXPORT void cs_disable_gr(cs_simulation_t* cs);
 
 /**
  * 开启辐射压与 Poynting-Robertson 拖曳力
  * @param cs  cs_simulation 句柄
  * @param c   光速（仿真单位），可用 CS_C_AU_YR_MSUN 等常量
  */
-void cs_enable_radiation(cs_simulation_t* cs, double c);
+DLLEXPORT void cs_enable_radiation(cs_simulation_t* cs, double c);
 
 /**
  * 关闭辐射压模块
  */
-void cs_disable_radiation(cs_simulation_t* cs);
+DLLEXPORT void cs_disable_radiation(cs_simulation_t* cs);
 
 /**
  * 开启引力谐波模块 (J2, J4, J6)
  */
-void cs_enable_harmonics(cs_simulation_t* cs);
+DLLEXPORT void cs_enable_harmonics(cs_simulation_t* cs);
 
 /**
  * 开启潮汐模块 (constant time lag)
  */
-void cs_enable_tides(cs_simulation_t* cs);
+DLLEXPORT void cs_enable_tides(cs_simulation_t* cs);
 
 /* 更多模块待实现：
  *   void cs_enable_migration_forces(cs_simulation_t* cs);
@@ -215,24 +215,47 @@ void cs_enable_tides(cs_simulation_t* cs);
  * Allocate and zero-initialise a cs_particle_params_t.
  * Returns NULL on allocation failure.
  */
-cs_particle_params_t* cs_particle_params_create(void);
+DLLEXPORT cs_particle_params_t* cs_particle_params_create(void);
 
 /**
  * Attach params to a particle (stores pointer in p->ap).
  * The cs layer takes ownership; params will be freed via free_particle_ap.
  */
-void cs_particle_params_set(struct reb_particle* p, cs_particle_params_t* params);
+DLLEXPORT void cs_particle_params_set(struct reb_particle* p, cs_particle_params_t* params);
 
 /**
  * Retrieve the params pointer from a particle.
  * Returns NULL if no params have been attached.
  */
-cs_particle_params_t* cs_particle_params_get(const struct reb_particle* p);
+DLLEXPORT cs_particle_params_t* cs_particle_params_get(const struct reb_particle* p);
 
 /**
  * Enable solar mass units.
  */
-void cs_enable_solarmass(cs_simulation_t* cs);
+DLLEXPORT DLLEXPORT void cs_enable_solarmass(cs_simulation_t* cs);
+
+/* -------------------------------------------------------------------------
+ * FFI helpers — create/dispatch without reading sim->extras
+ * Use these when cs is compiled separately from the host REBOUND binary
+ * (e.g. Python ctypes bindings where struct layouts may differ).
+ * ------------------------------------------------------------------------- */
+
+/** Bare allocation + zero-init.  Does NOT write to sim->extras. */
+DLLEXPORT cs_simulation_t* cs_ffi_create(void);
+
+/** Free cs pointer created by cs_ffi_create. */
+DLLEXPORT void cs_ffi_free(cs_simulation_t* cs);
+
+/** Dispatch additional-forces with explicit cs pointer (no extras read). */
+DLLEXPORT void cs_ffi_dispatch_af(struct reb_simulation* sim, cs_simulation_t* cs);
+
+/** Dispatch post-timestep modifications with explicit cs pointer. */
+DLLEXPORT void cs_ffi_dispatch_post_timestep(struct reb_simulation* sim, cs_simulation_t* cs);
+
+/** Non-variadic particle-add wrapper (for Python ctypes). */
+DLLEXPORT void cs_add_particle(struct reb_simulation* sim,
+    double m, double x, double y, double z,
+    double vx, double vy, double vz);
 
 
 #ifdef __cplusplus

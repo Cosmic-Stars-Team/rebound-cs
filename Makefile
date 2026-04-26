@@ -53,7 +53,7 @@ CINCL = -I. -I$(SRCDIR)
 # ====================================================================
 # default target
 # ====================================================================
-.PHONY: all librebound libcs test demo demo_mass clean
+.PHONY: all librebound libcs test demo demo_mass pycs clean
 
 all: librebound libcs
 
@@ -156,6 +156,12 @@ $(BLDDIR)/%.$(OBJFILEEXT): $(BLDDIR)/%.c
 	@echo "  CC  $<"
 	$(CC) -c $(OPT) $(PREDEF) $(CINCL) -o $@ $<
 endif
+
+# ====================================================================
+# Python extension (shared library for ctypes)
+# ====================================================================
+pycs:
+	$(MAKE) -C pycs
 
 # ====================================================================
 # clean

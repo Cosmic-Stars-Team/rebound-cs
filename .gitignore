@@ -30,9 +30,11 @@ others/mercury6.tar
 others/*/
 MANIFEST
 rebound.egg-info
+rebound_cs.egg-info/
 venv/
 dist/
 build/
+rebound_cs/build_*/
 .claude/
 rebound/examples/
 src/rebound

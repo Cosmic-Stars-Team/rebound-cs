@@ -14,7 +14,10 @@ rebound-cs/
 │   ├── cs.h                统一对外头文件，用户只需 include 这一个
 │   ├── cs_simulation.h/c   框架核心：模块注册、回调调度、生命周期管理
 │   ├── cs_gr.h/c           广义相对论后牛顿修正（三种精度模式）
-│   └── ...                 （更多模块持续添加中）
+│   ├── cs_radiation.h/c    辐射压与 Poynting-Robertson 拖曳
+│   ├── cs_harmonics.h/c    J2/J4 引力谐波
+│   ├── cs_tides.h/c        潮汐 CTL 模型
+│   └── cs_solarmass.h/c    恒星质量损失
 └── examples/       REBOUND C 示例
 ```
 
@@ -32,14 +35,15 @@ REBOUNDx 在 MSVC 上编译失败，导致无法直接集成到 Cosmic Stars 项
 | GR Potential | `cs/cs_gr.c` | 简单后牛顿势，最快，WHFast 辛安全 |
 | GR Single | `cs/cs_gr.c` | 单源完整 1PN 修正（Anderson 1975） |
 | GR Full | `cs/cs_gr.c` | 全体天体两两 1PN 修正（Newhall 1983），已修复 VLA |
+| 辐射压 + PR 拖曳 | `cs/cs_radiation.c` | 辐射压 + Poynting-Robertson 拖曳（Burns 1979） |
+| 恒星质量损失 | `cs/cs_solarmass.c` | 后时间步更新恒星质量，自动平移至质心系 |
+| 引力谐波 | `cs/cs_harmonics.c` | J2/J4 引力矩，自旋轴固定于 z 轴 |
+| 潮汐 CTL | `cs/cs_tides.c` | 常数时间滞后潮汐模型（Bolmont 2015） |
 
 ## 计划中的模块
 
-- `cs_mass` — 恒星质量损失 / 增长
-- `cs_radiation` — Poynting-Robertson 辐射拖曳
-- `cs_harmonics` — J2 / J4 / J6 引力矩
 - `cs_migration` — 轨道迁移（Type I / 力阻尼）
-- `cs_tides` — 潮汐（常数时间滞后 / 自旋耦合）
+- `cs_tides_spin` — 潮汐自旋锁定 / 自旋演化 ODE
 
 ---
 
