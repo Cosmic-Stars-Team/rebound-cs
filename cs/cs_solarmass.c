@@ -1,6 +1,5 @@
 #include "cs_solarmass.h"
 #include "cs_simulation.h"
-#include "../src/rebound.h"
 
 void cs_solarmass(struct reb_simulation* sim){
     const int _N_real = sim->N - sim->N_var;

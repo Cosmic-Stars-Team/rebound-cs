@@ -1,17 +1,14 @@
 #include "cs_simulation.h"
+#include "cs.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-/* -------------------------------------------------------------------------
- * Forward declarations of per-module force functions
- * Implemented in their respective cs_*.c files.
- * ------------------------------------------------------------------------- */
-void cs_gr_additional_forces(struct reb_simulation* sim);
-void cs_radiation_additional_forces(struct reb_simulation* sim);
-void cs_harmonics_additional_forces(struct reb_simulation* sim);
-void cs_tides_additional_forces(struct reb_simulation* sim);
-void cs_solarmass(struct reb_simulation* sim);
+/* All velocity-dependent module flags — used to track force_is_velocity_dependent */
+static const cs_modules_t VEL_DEP_MASK =
+    CS_MODULE_GR | CS_MODULE_GR_FULL |
+    CS_MODULE_RADIATION | CS_MODULE_MIGRATE_FORCES |
+    CS_MODULE_TIDES_CTL | CS_MODULE_TIDES_DYN | CS_MODULE_TIDES_SPIN;
 
 /* -------------------------------------------------------------------------
  * Internal dispatch callbacks
@@ -205,11 +202,7 @@ void cs_disable_radiation(cs_simulation_t* cs) {
     cs->modules &= ~CS_MODULE_RADIATION;
 
     /* 检查是否还有其他速度相关模块，没有则清除标志 */
-    const cs_modules_t vel_dep_mask =
-        CS_MODULE_GR | CS_MODULE_GR_FULL |
-        CS_MODULE_RADIATION | CS_MODULE_MIGRATE_FORCES |
-        CS_MODULE_TIDES_CTL | CS_MODULE_TIDES_DYN | CS_MODULE_TIDES_SPIN;
-    if (!(cs->modules & vel_dep_mask)) {
+    if (!(cs->modules & VEL_DEP_MASK)) {
         if (cs->sim) cs->sim->force_is_velocity_dependent = 0;
     }
 }
@@ -218,12 +211,7 @@ void cs_disable_gr(cs_simulation_t* cs) {
     if (!cs) return;
     cs->modules &= ~(CS_MODULE_GR_POTENTIAL | CS_MODULE_GR | CS_MODULE_GR_FULL);
 
-    const cs_modules_t vel_dep_mask =
-        CS_MODULE_GR | CS_MODULE_GR_FULL |
-        CS_MODULE_RADIATION | CS_MODULE_MIGRATE_FORCES |
-        CS_MODULE_TIDES_CTL | CS_MODULE_TIDES_DYN | CS_MODULE_TIDES_SPIN;
-
-    if (!(cs->modules & vel_dep_mask)) {
+    if (!(cs->modules & VEL_DEP_MASK)) {
         if (cs->sim) cs->sim->force_is_velocity_dependent = 0;
     }
 }

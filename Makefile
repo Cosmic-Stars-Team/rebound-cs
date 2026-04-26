@@ -35,9 +35,12 @@ CS_SRC := $(CSDIR)/cs_simulation.c $(CSDIR)/cs_gr.c \
           $(CSDIR)/cs_tides.c $(CSDIR)/cs_solarmass.c
 SRC_ALL := $(wildcard $(SRCDIR)/*.c)
 
-TST_SRC  := $(BLDDIR)/test_cs.c
-DEMO_SRC := $(BLDDIR)/demo_physics.c
-DMAS_SRC := $(BLDDIR)/demo_mass.c
+TSTDIR  := tests
+TST_SRC  := $(TSTDIR)/test_cs.c
+DEMO_SRC := $(TSTDIR)/demo_physics.c
+DMAS_SRC := $(TSTDIR)/demo_mass.c
+DTID_SRC := $(TSTDIR)/demo_tides.c
+DHAR_SRC := $(TSTDIR)/demo_harmonics.c
 
 # -------------------------------------------------------------------
 # Object files — compiled once to build/
@@ -46,9 +49,11 @@ CS_OBJ  := $(patsubst $(CSDIR)/%.c,$(BLDDIR)/%.$(OBJFILEEXT),$(CS_SRC))
 SRC_OBJ := $(patsubst $(SRCDIR)/%.c,$(BLDDIR)/%.$(OBJFILEEXT),$(SRC_ALL))
 ALL_OBJ := $(SRC_OBJ) $(CS_OBJ)
 
-TST_OBJ  := $(TST_SRC:.c=.$(OBJFILEEXT))
-DEMO_OBJ := $(DEMO_SRC:.c=.$(OBJFILEEXT))
-DMAS_OBJ := $(DMAS_SRC:.c=.$(OBJFILEEXT))
+TST_OBJ  := $(BLDDIR)/$(notdir $(TST_SRC:.c=.$(OBJFILEEXT)))
+DEMO_OBJ := $(BLDDIR)/$(notdir $(DEMO_SRC:.c=.$(OBJFILEEXT)))
+DMAS_OBJ := $(BLDDIR)/$(notdir $(DMAS_SRC:.c=.$(OBJFILEEXT)))
+DTID_OBJ := $(BLDDIR)/$(notdir $(DTID_SRC:.c=.$(OBJFILEEXT)))
+DHAR_OBJ := $(BLDDIR)/$(notdir $(DHAR_SRC:.c=.$(OBJFILEEXT)))
 
 # -------------------------------------------------------------------
 # Platform-specific output names
@@ -60,6 +65,8 @@ ifeq ($(OS), Windows_NT)
     TST_EXE  := $(BLDDIR)/test_cs.exe
     DEMO_EXE := $(BLDDIR)/demo_physics.exe
     DMAS_EXE := $(BLDDIR)/demo_mass.exe
+    DTID_EXE := $(BLDDIR)/demo_tides.exe
+    DHAR_EXE := $(BLDDIR)/demo_harmonics.exe
 else ifeq ($(OS), Darwin)
     LIBCS    := $(BLDDIR)/libcs.a
     LIBRE    := $(BLDDIR)/librebound.so
@@ -67,6 +74,8 @@ else ifeq ($(OS), Darwin)
     TST_EXE  := $(BLDDIR)/test_cs
     DEMO_EXE := $(BLDDIR)/demo_physics
     DMAS_EXE := $(BLDDIR)/demo_mass
+    DTID_EXE := $(BLDDIR)/demo_tides
+    DHAR_EXE := $(BLDDIR)/demo_harmonics
 else
     LIBCS    := $(BLDDIR)/libcs.a
     LIBRE    := $(BLDDIR)/librebound.so
@@ -74,6 +83,8 @@ else
     TST_EXE  := $(BLDDIR)/test_cs
     DEMO_EXE := $(BLDDIR)/demo_physics
     DMAS_EXE := $(BLDDIR)/demo_mass
+    DTID_EXE := $(BLDDIR)/demo_tides
+    DHAR_EXE := $(BLDDIR)/demo_harmonics
 endif
 
 CINCL := -I. -I$(SRCDIR)
@@ -81,7 +92,7 @@ CINCL := -I. -I$(SRCDIR)
 # ====================================================================
 # Default target
 # ====================================================================
-.PHONY: all librebound libcs pycs test demo demo_mass clean
+.PHONY: all librebound libcs pycs test demo demo_mass demo_tides demo_harmonics clean
 
 all: librebound libcs
 
@@ -180,6 +191,32 @@ else
 	$(CC) $(OPT) $(SRC_OBJ) $(CS_OBJ) $(DMAS_OBJ) $(LIB) -o $@
 endif
 
+demo_tides: $(SRC_OBJ) $(LIBCS) $(DTID_EXE)
+	@echo "  RUN  $(notdir $(DTID_EXE))"
+	cd $(BLDDIR) && ./$(notdir $(DTID_EXE))
+
+$(DTID_EXE): $(DTID_OBJ) $(CS_OBJ) $(SRC_OBJ)
+ifeq ($(OS), Windows_NT)
+	@echo "  LINK $@"
+	$(CC) /nologo $(SRC_OBJ) $(CS_OBJ) $(DTID_OBJ) /Fe:$@
+else
+	@echo "  LINK $@"
+	$(CC) $(OPT) $(SRC_OBJ) $(CS_OBJ) $(DTID_OBJ) $(LIB) -o $@
+endif
+
+demo_harmonics: $(SRC_OBJ) $(LIBCS) $(DHAR_EXE)
+	@echo "  RUN  $(notdir $(DHAR_EXE))"
+	cd $(BLDDIR) && ./$(notdir $(DHAR_EXE))
+
+$(DHAR_EXE): $(DHAR_OBJ) $(CS_OBJ) $(SRC_OBJ)
+ifeq ($(OS), Windows_NT)
+	@echo "  LINK $@"
+	$(CC) /nologo $(SRC_OBJ) $(CS_OBJ) $(DHAR_OBJ) /Fe:$@
+else
+	@echo "  LINK $@"
+	$(CC) $(OPT) $(SRC_OBJ) $(CS_OBJ) $(DHAR_OBJ) $(LIB) -o $@
+endif
+
 # ====================================================================
 # Compile pattern rules — all objects land in build/
 # ====================================================================
@@ -197,6 +234,11 @@ $(BLDDIR)/%.$(OBJFILEEXT): $(CSDIR)/%.c
 $(BLDDIR)/%.$(OBJFILEEXT): $(BLDDIR)/%.c
 	@echo "  CC  $<"
 	$(CC) -c $(OPT) $(PREDEF) $(CINCL) $< -Fo$@
+
+$(BLDDIR)/%.$(OBJFILEEXT): $(TSTDIR)/%.c
+	@if not exist "$(BLDDIR)" mkdir "$(BLDDIR)"
+	@echo "  CC  $<"
+	$(CC) -c $(OPT) $(PREDEF) $(CINCL) $< -Fo$@
 else
 $(BLDDIR)/%.$(OBJFILEEXT): $(SRCDIR)/%.c
 	@mkdir -p $(BLDDIR)
@@ -211,6 +253,11 @@ $(BLDDIR)/%.$(OBJFILEEXT): $(CSDIR)/%.c
 $(BLDDIR)/%.$(OBJFILEEXT): $(BLDDIR)/%.c
 	@echo "  CC  $<"
 	$(CC) -c $(OPT) $(PREDEF) $(CINCL) -o $@ $<
+
+$(BLDDIR)/%.$(OBJFILEEXT): $(TSTDIR)/%.c
+	@mkdir -p $(BLDDIR)
+	@echo "  CC  $<"
+	$(CC) -c $(OPT) $(PREDEF) $(CINCL) -o $@ $<
 endif
 
 # ====================================================================
@@ -219,7 +266,7 @@ endif
 clean:
 	@echo "Cleaning build artifacts..."
 	-$(RM) $(BLDDIR)/*.$(OBJFILEEXT)
-	-$(RM) $(LIBCS) $(LIBRE) $(TST_EXE) $(DEMO_EXE) $(DMAS_EXE)
+	-$(RM) $(LIBCS) $(LIBRE) $(TST_EXE) $(DEMO_EXE) $(DMAS_EXE) $(DTID_EXE) $(DHAR_EXE)
 	-$(RM) $(BLDDIR)/*.lib $(BLDDIR)/*.exp
 	-$(RM) $(PYCS_OUT)
 	-$(RM) $(PYDIR)/_cs.*

@@ -232,7 +232,7 @@ DLLEXPORT cs_particle_params_t* cs_particle_params_get(const struct reb_particle
 /**
  * Enable solar mass units.
  */
-DLLEXPORT DLLEXPORT void cs_enable_solarmass(cs_simulation_t* cs);
+DLLEXPORT void cs_enable_solarmass(cs_simulation_t* cs);
 
 /* -------------------------------------------------------------------------
  * FFI helpers — create/dispatch without reading sim->extras

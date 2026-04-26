@@ -87,9 +87,11 @@ _clib.cs_particle_params_set.restype = None
 # Constants
 # ---------------------------------------------------------------------------
 
+# Mirror of C enums from cs/cs_simulation.h — keep in sync
 CS_GR_POTENTIAL = 0
 CS_GR_SINGLE = 1
 CS_GR_FULL = 2
+# Mirror of C defines from cs/cs.h — keep in sync
 CS_C_SI = 299792458.0
 CS_C_AU_YR_MSUN = 63241.077
 CS_C_AU_DAY_MSUN = 173.14463269
@@ -191,6 +193,8 @@ class CsSimulation:
         sim._post_timestep_modifications = ctypes.cast(self._ptp, ctypes.c_void_p).value
 
     # -- enable / disable -----------------------------------------------
+    # NOTE: force_is_velocity_dependent mirrors C logic in cs_simulation.c
+    # VEL_DEP_MASK there must match the modules that set it here.
 
     def enable_gr(self, mode=CS_GR_POTENTIAL, c=CS_C_AU_YR_MSUN):
         _clib.cs_enable_gr(self._ptr, mode, c)
